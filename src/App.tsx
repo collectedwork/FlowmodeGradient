@@ -21,7 +21,7 @@ function App() {
 
   const { cursorMode, cursorRadius, cursorStrength, cursorFalloffWidth, cursorNoiseScale, cursorNoiseSpeed, cursorOctaves, cursorLacunarity, cursorDrag, cursorTrailDecay } =
     useControls('Cursor Distortion', {
-      cursorMode: { label: 'Mode', options: { 'Noise Warp': 0, 'Velocity Offset': 1 }, value: 1 },
+      cursorMode: { label: 'Mode', options: { 'Noise Warp': 0, 'Velocity Offset': 1 }, value: 0 },
       cursorRadius: { label: 'Radius', value: 0.15, min: 0.01, max: 1.0, step: 0.01 },
       cursorStrength: { label: 'Strength', value: 1.5, min: -1.0, max: 2.0, step: 0.01 },
       cursorFalloffWidth: { label: 'Falloff Width', value: 0.12, min: 0.0, max: 0.5, step: 0.01 },
