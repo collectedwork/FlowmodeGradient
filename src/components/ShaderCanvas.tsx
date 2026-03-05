@@ -53,6 +53,10 @@ export default function ShaderCanvas({
   const cursorRef = useRef<[number, number]>([0.5, 0.5]);
   // Raw (instant) mouse position, smoothed cursor lerps toward this
   const cursorTargetRef = useRef<[number, number]>([0.5, 0.5]);
+  // Whether the cursor is currently over the canvas
+  const cursorActiveRef = useRef(false);
+  // Smoothed cursor strength multiplier (0 when off-canvas, 1 when on)
+  const cursorFadeRef = useRef(0);
 
   // Lerp state lives outside React state to avoid re-renders each frame
   const lerpRef = useRef<LerpState | null>(null);
@@ -129,7 +133,7 @@ export default function ShaderCanvas({
         blend: easedBlend,
         cursor: cursorRef.current,
         cursorRadius: props.cursorRadius,
-        cursorStrength: props.cursorStrength,
+        cursorStrength: props.cursorStrength * cursorFadeRef.current,
         cursorNoiseScale: props.cursorNoiseScale,
         cursorNoiseSpeed: props.cursorNoiseSpeed,
         cursorOctaves: props.cursorOctaves,
@@ -165,7 +169,21 @@ export default function ShaderCanvas({
       const y = 1.0 - (e.clientY - rect.top) / rect.height; // flip Y to match UV
       cursorTargetRef.current = [x, y];
     }
+    function onMouseEnter(e: MouseEvent) {
+      const rect = canvas!.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width;
+      const y = 1.0 - (e.clientY - rect.top) / rect.height;
+      // Snap both smoothed and target position so there's no lerp from center
+      cursorRef.current = [x, y];
+      cursorTargetRef.current = [x, y];
+      cursorActiveRef.current = true;
+    }
+    function onMouseLeave() {
+      cursorActiveRef.current = false;
+    }
     canvas.addEventListener('mousemove', onMouseMove);
+    canvas.addEventListener('mouseenter', onMouseEnter);
+    canvas.addEventListener('mouseleave', onMouseLeave);
 
     // ---- Render loop ----
     function frame(nowMs: number) {
@@ -189,6 +207,11 @@ export default function ShaderCanvas({
         cy + (ty - cy) * smoothing,
       ];
 
+      // Smooth fade cursor strength in/out
+      const fadeTarget = cursorActiveRef.current ? 1.0 : 0.0;
+      const fadeSmooting = 1.0 - Math.pow(0.05, dt); // ~fast fade
+      cursorFadeRef.current += (fadeTarget - cursorFadeRef.current) * fadeSmooting;
+
       render();
     }
 
@@ -199,6 +222,8 @@ export default function ShaderCanvas({
       cancelAnimationFrame(rafId);
       resizeObserver.disconnect();
       canvas.removeEventListener('mousemove', onMouseMove);
+      canvas.removeEventListener('mouseenter', onMouseEnter);
+      canvas.removeEventListener('mouseleave', onMouseLeave);
       gl.deleteProgram(program);
       gl.deleteVertexArray(vao);
     };

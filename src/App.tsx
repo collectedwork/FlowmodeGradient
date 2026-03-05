@@ -22,7 +22,7 @@ function App() {
   const { cursorRadius, cursorStrength, cursorNoiseScale, cursorNoiseSpeed, cursorOctaves, cursorLacunarity, cursorDrag } =
     useControls('Cursor Distortion', {
       cursorRadius: { label: 'Radius', value: 0.21, min: 0.01, max: 1.0, step: 0.01 },
-      cursorStrength: { label: 'Strength', value: 0.85, min: -1.0, max: 1.0, step: 0.01 },
+      cursorStrength: { label: 'Strength', value: 0.85, min: -1.0, max: 2.0, step: 0.01 },
       cursorNoiseScale: { label: 'Noise Scale', value: 1.5, min: 0.5, max: 20.0, step: 0.5 },
       cursorNoiseSpeed: { label: 'Noise Speed', value: 0.0, min: 0.0, max: 2.0, step: 0.05 },
       cursorOctaves: { label: 'Octaves', value: 1, min: 1, max: 6, step: 1 },
