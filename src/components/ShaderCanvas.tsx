@@ -27,6 +27,7 @@ export interface ShaderCanvasProps {
   cursorOctaves: number;
   cursorLacunarity: number;
   cursorDrag: number;
+  cursorTrailDecay: number;
 }
 
 export default function ShaderCanvas({
@@ -46,12 +47,13 @@ export default function ShaderCanvas({
   cursorOctaves,
   cursorLacunarity,
   cursorDrag,
+  cursorTrailDecay,
 }: ShaderCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Mutable refs so the rAF loop always reads the latest props without re-init
-  const propsRef = useRef({ noiseScaleX, noiseScaleY, scrollSpeed, evolveSpeed, lerpDuration, lerpEasing, cursorMode, cursorRadius, cursorStrength, cursorFalloffWidth, cursorNoiseScale, cursorNoiseSpeed, cursorOctaves, cursorLacunarity, cursorDrag });
-  propsRef.current = { noiseScaleX, noiseScaleY, scrollSpeed, evolveSpeed, lerpDuration, lerpEasing, cursorMode, cursorRadius, cursorStrength, cursorFalloffWidth, cursorNoiseScale, cursorNoiseSpeed, cursorOctaves, cursorLacunarity, cursorDrag };
+  const propsRef = useRef({ noiseScaleX, noiseScaleY, scrollSpeed, evolveSpeed, lerpDuration, lerpEasing, cursorMode, cursorRadius, cursorStrength, cursorFalloffWidth, cursorNoiseScale, cursorNoiseSpeed, cursorOctaves, cursorLacunarity, cursorDrag, cursorTrailDecay });
+  propsRef.current = { noiseScaleX, noiseScaleY, scrollSpeed, evolveSpeed, lerpDuration, lerpEasing, cursorMode, cursorRadius, cursorStrength, cursorFalloffWidth, cursorNoiseScale, cursorNoiseSpeed, cursorOctaves, cursorLacunarity, cursorDrag, cursorTrailDecay };
 
   // Cursor position in normalized UV space [0,1] — updated by mousemove
   const cursorRef = useRef<[number, number]>([0.5, 0.5]);
@@ -112,6 +114,15 @@ export default function ShaderCanvas({
     let elapsed = 0;
     let rafId = 0;
 
+    // ---- Ghost trail buffer ----
+    const GHOST_COUNT = 10;
+    const ghostPos = new Float32Array(GHOST_COUNT * 2);
+    const ghostStrength = new Float32Array(GHOST_COUNT);
+    for (let i = 0; i < GHOST_COUNT; i++) {
+      ghostPos[i * 2] = 0.5;
+      ghostPos[i * 2 + 1] = 0.5;
+    }
+
     // ---- Shared render function ----
     function render() {
       const props = propsRef.current;
@@ -149,6 +160,9 @@ export default function ShaderCanvas({
         cursorNoiseSpeed: props.cursorNoiseSpeed,
         cursorOctaves: props.cursorOctaves,
         cursorLacunarity: props.cursorLacunarity,
+        ghostPositions: ghostPos,
+        ghostStrengths: ghostStrength,
+        ghostCount: GHOST_COUNT,
       });
 
       gl!.drawArrays(gl!.TRIANGLES, 0, 3);
@@ -238,6 +252,32 @@ export default function ShaderCanvas({
         ];
       }
       cursorPrevRef.current = [scx, scy];
+
+      // ---- Update ghost trail buffer ----
+      {
+        const trailDecay = propsRef.current.cursorTrailDecay;
+
+        // Decay all ghost strengths
+        for (let i = 0; i < GHOST_COUNT; i++) {
+          ghostStrength[i] *= Math.pow(trailDecay, dt * 60.0);
+          if (ghostStrength[i] < 0.001) ghostStrength[i] = 0;
+        }
+
+        // Push new ghost only if cursor moved enough (avoid bunching)
+        const [sx, sy] = cursorRef.current;
+        const gdx = sx - ghostPos[0];
+        const gdy = sy - ghostPos[1];
+        if (gdx * gdx + gdy * gdy > 0.000009) { // > 0.003 distance
+          for (let i = GHOST_COUNT - 1; i > 0; i--) {
+            ghostPos[i * 2] = ghostPos[(i - 1) * 2];
+            ghostPos[i * 2 + 1] = ghostPos[(i - 1) * 2 + 1];
+            ghostStrength[i] = ghostStrength[i - 1];
+          }
+          ghostPos[0] = sx;
+          ghostPos[1] = sy;
+          ghostStrength[0] = 1.0;
+        }
+      }
 
       render();
     }

@@ -26,6 +26,9 @@ export interface UniformLocations {
   u_cursorNoiseSpeed: WebGLUniformLocation | null;
   u_cursorOctaves: WebGLUniformLocation | null;
   u_cursorLacunarity: WebGLUniformLocation | null;
+  u_ghostPos: WebGLUniformLocation | null;
+  u_ghostStrength: WebGLUniformLocation | null;
+  u_ghostCount: WebGLUniformLocation | null;
 }
 
 const UNIFORM_NAMES: (keyof UniformLocations)[] = [
@@ -52,6 +55,9 @@ const UNIFORM_NAMES: (keyof UniformLocations)[] = [
   'u_cursorNoiseSpeed',
   'u_cursorOctaves',
   'u_cursorLacunarity',
+  'u_ghostPos',
+  'u_ghostStrength',
+  'u_ghostCount',
 ];
 
 export function getUniformLocations(
@@ -99,6 +105,9 @@ export function setUniforms(
     cursorNoiseSpeed: number;
     cursorOctaves: number;
     cursorLacunarity: number;
+    ghostPositions: Float32Array;
+    ghostStrengths: Float32Array;
+    ghostCount: number;
   },
 ) {
   gl.uniform1f(locs.u_time, params.time);
@@ -124,4 +133,7 @@ export function setUniforms(
   gl.uniform1f(locs.u_cursorNoiseSpeed, params.cursorNoiseSpeed);
   gl.uniform1i(locs.u_cursorOctaves, params.cursorOctaves);
   gl.uniform1f(locs.u_cursorLacunarity, params.cursorLacunarity);
+  gl.uniform2fv(locs.u_ghostPos, params.ghostPositions);
+  gl.uniform1fv(locs.u_ghostStrength, params.ghostStrengths);
+  gl.uniform1i(locs.u_ghostCount, params.ghostCount);
 }

@@ -55,6 +55,12 @@ uniform float u_cursorNoiseSpeed; // evolution speed of the warp noise
 uniform int   u_cursorOctaves;    // FBM octaves for the warp noise
 uniform float u_cursorLacunarity; // frequency multiplier per octave
 
+// ---- Ghost trail uniforms ----
+#define MAX_GHOSTS 10
+uniform vec2  u_ghostPos[MAX_GHOSTS];
+uniform float u_ghostStrength[MAX_GHOSTS];
+uniform int   u_ghostCount;
+
 // ---- 3D Simplex Noise (Ashima / webgl-noise, public domain) ----
 vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
 vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
@@ -156,44 +162,94 @@ void main() {
   vec2 uv = vUV;
   uv.x *= u_aspect;
 
-  // ---- Cursor distortion (applied before noise scaling) ----
-  vec2 cursorAspect = vec2(u_cursor.x * u_aspect, u_cursor.y);
-  vec2 delta = uv - cursorAspect;
-  float dist = length(delta);
+  // ---- Unified cursor + trail distortion ----
+  // Build a single smooth falloff field from the cursor AND the ghost trail,
+  // then apply distortion once so there's no double-up at the cursor/trail junction.
 
-  // Inner/outer radius falloff: full effect inside inner, zero outside outer
   float inner = max(u_cursorRadius - u_cursorFalloffWidth, 0.0);
-  float falloff = 1.0 - smoothstep(inner, u_cursorRadius, dist);
 
-  if (u_cursorMode == 0) {
-    // ---- Mode 0: FBM noise warp ----
-    float amp = 1.0;
-    float freq = u_cursorNoiseScale;
-    float nx = 0.0;
-    float ny = 0.0;
-    float totalAmp = 0.0;
-    for (int o = 0; o < 6; o++) {
-      if (o >= u_cursorOctaves) break;
-      nx += amp * snoise(vec3(uv * freq, u_time * u_cursorNoiseSpeed));
-      ny += amp * snoise(vec3(uv * freq + 100.0, u_time * u_cursorNoiseSpeed));
-      totalAmp += amp;
-      freq *= u_cursorLacunarity;
-      amp *= 0.5;
+  // Start with the live cursor as a point contributor
+  vec2 cursorAspect = vec2(u_cursor.x * u_aspect, u_cursor.y);
+  float cursorDist = length(uv - cursorAspect);
+  float combinedFalloff = (1.0 - smoothstep(inner, u_cursorRadius, cursorDist)) * u_cursorStrength;
+
+  // Add a segment from cursor → first ghost (bridges the gap)
+  if (u_ghostCount >= 1 && u_ghostStrength[0] >= 0.001) {
+    vec2 pA = cursorAspect;
+    vec2 pB = vec2(u_ghostPos[0].x * u_aspect, u_ghostPos[0].y);
+    vec2 seg = pB - pA;
+    float segLen = length(seg);
+    float t_seg = (segLen > 0.0001) ? clamp(dot(uv - pA, seg) / (segLen * segLen), 0.0, 1.0) : 0.0;
+    vec2 closest = pA + seg * t_seg;
+    float d = length(uv - closest);
+    float interpStrength = mix(u_cursorStrength, u_cursorStrength * u_ghostStrength[0], t_seg);
+    float gf = (1.0 - smoothstep(inner, u_cursorRadius, d)) * interpStrength;
+    combinedFalloff = max(combinedFalloff, gf);
+  }
+
+  // Walk ghost segments
+  for (int g = 0; g < MAX_GHOSTS - 1; g++) {
+    if (g + 1 >= u_ghostCount) break;
+    float sA = u_ghostStrength[g];
+    float sB = u_ghostStrength[g + 1];
+    if (max(sA, sB) < 0.001) continue;
+
+    vec2 pA = vec2(u_ghostPos[g].x * u_aspect, u_ghostPos[g].y);
+    vec2 pB = vec2(u_ghostPos[g + 1].x * u_aspect, u_ghostPos[g + 1].y);
+
+    vec2 seg = pB - pA;
+    float segLen = length(seg);
+    float t_seg = (segLen > 0.0001) ? clamp(dot(uv - pA, seg) / (segLen * segLen), 0.0, 1.0) : 0.0;
+    vec2 closest = pA + seg * t_seg;
+    float d = length(uv - closest);
+
+    float interpStrength = mix(sA, sB, t_seg) * u_cursorStrength;
+    float gf = (1.0 - smoothstep(inner, u_cursorRadius, d)) * interpStrength;
+    combinedFalloff = max(combinedFalloff, gf);
+  }
+
+  // Last ghost as a point
+  if (u_ghostCount >= 1) {
+    int last = u_ghostCount - 1;
+    float sL = u_ghostStrength[last];
+    if (sL >= 0.001) {
+      vec2 pL = vec2(u_ghostPos[last].x * u_aspect, u_ghostPos[last].y);
+      float dL = length(uv - pL);
+      float gfL = (1.0 - smoothstep(inner, u_cursorRadius, dL)) * sL * u_cursorStrength;
+      combinedFalloff = max(combinedFalloff, gfL);
     }
-    nx /= totalAmp;
-    ny /= totalAmp;
-    uv += vec2(nx, ny) * u_cursorStrength * falloff;
-  } else {
-    // ---- Mode 1: Velocity offset ----
-    float speed = length(u_cursorVelocity);
-    if (speed > 0.001) {
-      vec2 dir = u_cursorVelocity / speed;
-      // Aspect-correct the direction vector
-      dir.x *= u_aspect;
-      dir = normalize(dir);
-      // Speed scales strength, clamped to a reasonable max
-      float speedFactor = clamp(speed * 0.5, 0.0, 1.0);
-      uv += dir * u_cursorStrength * speedFactor * falloff;
+  }
+
+  // Apply distortion once with the unified falloff
+  if (combinedFalloff > 0.001) {
+    if (u_cursorMode == 0) {
+      // FBM noise warp
+      float amp = 1.0;
+      float freq = u_cursorNoiseScale;
+      float nx = 0.0;
+      float ny = 0.0;
+      float totalAmp = 0.0;
+      for (int o = 0; o < 6; o++) {
+        if (o >= u_cursorOctaves) break;
+        nx += amp * snoise(vec3(uv * freq, u_time * u_cursorNoiseSpeed));
+        ny += amp * snoise(vec3(uv * freq + 100.0, u_time * u_cursorNoiseSpeed));
+        totalAmp += amp;
+        freq *= u_cursorLacunarity;
+        amp *= 0.5;
+      }
+      nx /= totalAmp;
+      ny /= totalAmp;
+      uv += vec2(nx, ny) * combinedFalloff;
+    } else {
+      // Velocity offset
+      float speed = length(u_cursorVelocity);
+      if (speed > 0.001) {
+        vec2 dir = u_cursorVelocity / speed;
+        dir.x *= u_aspect;
+        dir = normalize(dir);
+        float speedFactor = clamp(speed * 0.5, 0.0, 1.0);
+        uv += dir * combinedFalloff * speedFactor;
+      }
     }
   }
 

@@ -19,7 +19,7 @@ function App() {
       lerpEasing: { label: 'Lerp Easing (power)', value: 3.0, min: 1, max: 10, step: 0.5 },
     });
 
-  const { cursorMode, cursorRadius, cursorStrength, cursorFalloffWidth, cursorNoiseScale, cursorNoiseSpeed, cursorOctaves, cursorLacunarity, cursorDrag } =
+  const { cursorMode, cursorRadius, cursorStrength, cursorFalloffWidth, cursorNoiseScale, cursorNoiseSpeed, cursorOctaves, cursorLacunarity, cursorDrag, cursorTrailDecay } =
     useControls('Cursor Distortion', {
       cursorMode: { label: 'Mode', options: { 'Noise Warp': 0, 'Velocity Offset': 1 }, value: 0 },
       cursorRadius: { label: 'Radius', value: 0.21, min: 0.01, max: 1.0, step: 0.01 },
@@ -30,6 +30,7 @@ function App() {
       cursorOctaves: { label: 'Octaves', value: 1, min: 1, max: 6, step: 1 },
       cursorLacunarity: { label: 'Lacunarity', value: 2.8, min: 1.0, max: 4.0, step: 0.1 },
       cursorDrag: { label: 'Drag', value: 0.88, min: 0.0, max: 0.99, step: 0.01 },
+      cursorTrailDecay: { label: 'Trail Decay', value: 0.75, min: 0.0, max: 0.99, step: 0.01 },
     });
 
   return (
@@ -53,6 +54,7 @@ function App() {
           cursorOctaves={cursorOctaves}
           cursorLacunarity={cursorLacunarity}
           cursorDrag={cursorDrag}
+          cursorTrailDecay={cursorTrailDecay}
         />
       </div>
     </div>
