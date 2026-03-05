@@ -1,0 +1,40 @@
+Palette Key,Palette Name,Stop %,Hex Color
+A,Dawn,0%,331B0F
+A,Dawn,19%,E82338
+A,Dawn,35%,FC6540
+A,Dawn,48%,F39A35
+A,Dawn,62%,FFC471
+A,Dawn,74%,CCC4BB
+A,Dawn,86%,66A4CE
+A,Dawn,96%,5890C3
+B,Foggy Haze,0%,4E917D
+B,Foggy Haze,23%,C4EFC9
+B,Foggy Haze,49%,CEF36E
+B,Foggy Haze,79%,4E917D
+B,Foggy Haze,100%,0A6350
+C,Morning,0%,FFFFFF
+C,Morning,75%,F39A35
+C,Morning,100%,FC6540
+D,Midday,0%,89C0C6
+D,Midday,22%,DEDEDE
+D,Midday,42%,DEDEDE
+D,Midday,75%,89C0C6
+D,Midday,100%,66A4CE
+E,Dusk,0%,9EEFE1
+E,Dusk,23%,DBDBDB
+E,Dusk,49%,F39A35
+E,Dusk,78%,4E917D
+E,Dusk,100%,0A6350
+F,Sunset,0%,E82338
+F,Sunset,24%,FC483B
+F,Sunset,52%,FC6540
+F,Sunset,100%,C29688
+G,Afterglow,0%,FC6540
+G,Afterglow,19%,F39A35
+G,Afterglow,50%,FC6540
+G,Afterglow,68%,FC483B
+G,Afterglow,82%,FC6540
+G,Afterglow,100%,F39A35
+H,Night,0%,000000
+H,Night,50%,0B1836
+H,Night,88%,1F3362
