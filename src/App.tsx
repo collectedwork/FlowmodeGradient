@@ -19,10 +19,12 @@ function App() {
       lerpEasing: { label: 'Lerp Easing (power)', value: 3.0, min: 1, max: 10, step: 0.5 },
     });
 
-  const { cursorRadius, cursorStrength, cursorNoiseScale, cursorNoiseSpeed, cursorOctaves, cursorLacunarity, cursorDrag } =
+  const { cursorMode, cursorRadius, cursorStrength, cursorFalloffWidth, cursorNoiseScale, cursorNoiseSpeed, cursorOctaves, cursorLacunarity, cursorDrag } =
     useControls('Cursor Distortion', {
+      cursorMode: { label: 'Mode', options: { 'Noise Warp': 0, 'Velocity Offset': 1 }, value: 0 },
       cursorRadius: { label: 'Radius', value: 0.21, min: 0.01, max: 1.0, step: 0.01 },
       cursorStrength: { label: 'Strength', value: 0.85, min: -1.0, max: 2.0, step: 0.01 },
+      cursorFalloffWidth: { label: 'Falloff Width', value: 0.1, min: 0.0, max: 0.5, step: 0.01 },
       cursorNoiseScale: { label: 'Noise Scale', value: 1.5, min: 0.5, max: 20.0, step: 0.5 },
       cursorNoiseSpeed: { label: 'Noise Speed', value: 0.0, min: 0.0, max: 2.0, step: 0.05 },
       cursorOctaves: { label: 'Octaves', value: 1, min: 1, max: 6, step: 1 },
@@ -42,8 +44,10 @@ function App() {
           evolveSpeed={evolveSpeed}
           lerpDuration={lerpDuration}
           lerpEasing={lerpEasing}
+          cursorMode={cursorMode}
           cursorRadius={cursorRadius}
           cursorStrength={cursorStrength}
+          cursorFalloffWidth={cursorFalloffWidth}
           cursorNoiseScale={cursorNoiseScale}
           cursorNoiseSpeed={cursorNoiseSpeed}
           cursorOctaves={cursorOctaves}

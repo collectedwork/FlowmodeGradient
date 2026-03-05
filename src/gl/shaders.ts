@@ -44,9 +44,12 @@ uniform int   u_stopCountB;
 uniform float u_blend;
 
 // ---- Cursor distortion uniforms ----
-uniform vec2  u_cursor;          // normalized cursor position in UV space
-uniform float u_cursorRadius;     // falloff radius in UV space
-uniform float u_cursorStrength;   // distortion amount (+push / -pull)
+uniform vec2  u_cursor;           // normalized cursor position in UV space
+uniform int   u_cursorMode;       // 0 = noise warp, 1 = velocity offset
+uniform float u_cursorRadius;     // outer falloff radius in UV space
+uniform float u_cursorStrength;   // distortion amount
+uniform float u_cursorFalloffWidth; // width of falloff band (inner = radius - falloffWidth)
+uniform vec2  u_cursorVelocity;   // smoothed cursor velocity in UV/s
 uniform float u_cursorNoiseScale; // frequency of the warp noise
 uniform float u_cursorNoiseSpeed; // evolution speed of the warp noise
 uniform int   u_cursorOctaves;    // FBM octaves for the warp noise
@@ -157,12 +160,13 @@ void main() {
   vec2 cursorAspect = vec2(u_cursor.x * u_aspect, u_cursor.y);
   vec2 delta = uv - cursorAspect;
   float dist = length(delta);
-  // Gaussian falloff: exp(-0.5 * (dist/sigma)^2), sigma = radius/3
-  float sigma = u_cursorRadius / 3.0;
-  float falloff = exp(-0.5 * (dist * dist) / (sigma * sigma));
 
-  // FBM noise warp: distort UVs locally around cursor
-  {
+  // Inner/outer radius falloff: full effect inside inner, zero outside outer
+  float inner = max(u_cursorRadius - u_cursorFalloffWidth, 0.0);
+  float falloff = 1.0 - smoothstep(inner, u_cursorRadius, dist);
+
+  if (u_cursorMode == 0) {
+    // ---- Mode 0: FBM noise warp ----
     float amp = 1.0;
     float freq = u_cursorNoiseScale;
     float nx = 0.0;
@@ -179,6 +183,18 @@ void main() {
     nx /= totalAmp;
     ny /= totalAmp;
     uv += vec2(nx, ny) * u_cursorStrength * falloff;
+  } else {
+    // ---- Mode 1: Velocity offset ----
+    float speed = length(u_cursorVelocity);
+    if (speed > 0.001) {
+      vec2 dir = u_cursorVelocity / speed;
+      // Aspect-correct the direction vector
+      dir.x *= u_aspect;
+      dir = normalize(dir);
+      // Speed scales strength, clamped to a reasonable max
+      float speedFactor = clamp(speed * 0.5, 0.0, 1.0);
+      uv += dir * u_cursorStrength * speedFactor * falloff;
+    }
   }
 
   // Scale for noise frequency (per-axis)

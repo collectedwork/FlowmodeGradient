@@ -18,8 +18,10 @@ export interface ShaderCanvasProps {
   evolveSpeed: number;
   lerpDuration: number;
   lerpEasing: number;
+  cursorMode: number;
   cursorRadius: number;
   cursorStrength: number;
+  cursorFalloffWidth: number;
   cursorNoiseScale: number;
   cursorNoiseSpeed: number;
   cursorOctaves: number;
@@ -35,8 +37,10 @@ export default function ShaderCanvas({
   evolveSpeed,
   lerpDuration,
   lerpEasing,
+  cursorMode,
   cursorRadius,
   cursorStrength,
+  cursorFalloffWidth,
   cursorNoiseScale,
   cursorNoiseSpeed,
   cursorOctaves,
@@ -46,8 +50,8 @@ export default function ShaderCanvas({
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Mutable refs so the rAF loop always reads the latest props without re-init
-  const propsRef = useRef({ noiseScaleX, noiseScaleY, scrollSpeed, evolveSpeed, lerpDuration, lerpEasing, cursorRadius, cursorStrength, cursorNoiseScale, cursorNoiseSpeed, cursorOctaves, cursorLacunarity, cursorDrag });
-  propsRef.current = { noiseScaleX, noiseScaleY, scrollSpeed, evolveSpeed, lerpDuration, lerpEasing, cursorRadius, cursorStrength, cursorNoiseScale, cursorNoiseSpeed, cursorOctaves, cursorLacunarity, cursorDrag };
+  const propsRef = useRef({ noiseScaleX, noiseScaleY, scrollSpeed, evolveSpeed, lerpDuration, lerpEasing, cursorMode, cursorRadius, cursorStrength, cursorFalloffWidth, cursorNoiseScale, cursorNoiseSpeed, cursorOctaves, cursorLacunarity, cursorDrag });
+  propsRef.current = { noiseScaleX, noiseScaleY, scrollSpeed, evolveSpeed, lerpDuration, lerpEasing, cursorMode, cursorRadius, cursorStrength, cursorFalloffWidth, cursorNoiseScale, cursorNoiseSpeed, cursorOctaves, cursorLacunarity, cursorDrag };
 
   // Cursor position in normalized UV space [0,1] — updated by mousemove
   const cursorRef = useRef<[number, number]>([0.5, 0.5]);
@@ -57,6 +61,10 @@ export default function ShaderCanvas({
   const cursorActiveRef = useRef(false);
   // Smoothed cursor strength multiplier (0 when off-canvas, 1 when on)
   const cursorFadeRef = useRef(0);
+  // Smoothed cursor velocity in UV space (for velocity-offset mode)
+  const cursorVelocityRef = useRef<[number, number]>([0, 0]);
+  // Previous smoothed cursor position (for computing velocity)
+  const cursorPrevRef = useRef<[number, number]>([0.5, 0.5]);
 
   // Lerp state lives outside React state to avoid re-renders each frame
   const lerpRef = useRef<LerpState | null>(null);
@@ -132,8 +140,11 @@ export default function ShaderCanvas({
         stopCountB: lerp.to.stopCount,
         blend: easedBlend,
         cursor: cursorRef.current,
+        cursorMode: props.cursorMode,
         cursorRadius: props.cursorRadius,
         cursorStrength: props.cursorStrength * cursorFadeRef.current,
+        cursorFalloffWidth: props.cursorFalloffWidth,
+        cursorVelocity: cursorVelocityRef.current,
         cursorNoiseScale: props.cursorNoiseScale,
         cursorNoiseSpeed: props.cursorNoiseSpeed,
         cursorOctaves: props.cursorOctaves,
@@ -211,6 +222,22 @@ export default function ShaderCanvas({
       const fadeTarget = cursorActiveRef.current ? 1.0 : 0.0;
       const fadeSmooting = 1.0 - Math.pow(0.05, dt); // ~fast fade
       cursorFadeRef.current += (fadeTarget - cursorFadeRef.current) * fadeSmooting;
+
+      // Compute cursor velocity from smoothed position delta
+      const [pcx, pcy] = cursorPrevRef.current;
+      const [scx, scy] = cursorRef.current;
+      if (dt > 0.0001) {
+        const rawVx = (scx - pcx) / dt;
+        const rawVy = (scy - pcy) / dt;
+        // Smooth velocity (exponential)
+        const velSmooth = 1.0 - Math.pow(0.001, dt);
+        const [vx, vy] = cursorVelocityRef.current;
+        cursorVelocityRef.current = [
+          vx + (rawVx - vx) * velSmooth,
+          vy + (rawVy - vy) * velSmooth,
+        ];
+      }
+      cursorPrevRef.current = [scx, scy];
 
       render();
     }
