@@ -22,15 +22,15 @@ function App() {
   const { cursorMode, cursorRadius, cursorStrength, cursorFalloffWidth, cursorNoiseScale, cursorNoiseSpeed, cursorOctaves, cursorLacunarity, cursorDrag, cursorTrailDecay } =
     useControls('Cursor Distortion', {
       cursorMode: { label: 'Mode', options: { 'Noise Warp': 0, 'Velocity Offset': 1 }, value: 1 },
-      cursorRadius: { label: 'Radius', value: 0.13, min: 0.01, max: 1.0, step: 0.01 },
-      cursorStrength: { label: 'Strength', value: 0.85, min: -1.0, max: 2.0, step: 0.01 },
-      cursorFalloffWidth: { label: 'Falloff Width', value: 0.09, min: 0.0, max: 0.5, step: 0.01 },
+      cursorRadius: { label: 'Radius', value: 0.15, min: 0.01, max: 1.0, step: 0.01 },
+      cursorStrength: { label: 'Strength', value: 1.5, min: -1.0, max: 2.0, step: 0.01 },
+      cursorFalloffWidth: { label: 'Falloff Width', value: 0.12, min: 0.0, max: 0.5, step: 0.01 },
       cursorNoiseScale: { label: 'Noise Scale', value: 1.5, min: 0.5, max: 20.0, step: 0.5 },
       cursorNoiseSpeed: { label: 'Noise Speed', value: 0.0, min: 0.0, max: 2.0, step: 0.05 },
       cursorOctaves: { label: 'Octaves', value: 1, min: 1, max: 6, step: 1 },
       cursorLacunarity: { label: 'Lacunarity', value: 2.8, min: 1.0, max: 4.0, step: 0.1 },
-      cursorDrag: { label: 'Drag', value: 0.79, min: 0.0, max: 0.99, step: 0.01 },
-      cursorTrailDecay: { label: 'Trail Decay', value: 0.81, min: 0.0, max: 0.99, step: 0.01 },
+      cursorDrag: { label: 'Drag', value: 0.7, min: 0.0, max: 0.99, step: 0.01 },
+      cursorTrailDecay: { label: 'Trail Decay', value: 0.75, min: 0.0, max: 0.99, step: 0.01 },
     });
 
   return (
