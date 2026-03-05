@@ -42,7 +42,7 @@ function hex(h: string): [number, number, number] {
 
 export const PALETTES: Record<string, Palette> = {
   A: {
-    name: 'Red',
+    name: 'Dawn',
     stops: [
       { color: hex('331B0F') },
       { color: hex('E82338') },
@@ -55,25 +55,7 @@ export const PALETTES: Record<string, Palette> = {
     ],
   },
   B: {
-    name: 'Teal to Orange',
-    stops: [
-      { color: hex('9EEFE1') },
-      { color: hex('DBDBDB') },
-      { color: hex('F39A35') },
-      { color: hex('4E917D') },
-      { color: hex('0A6350') },
-    ],
-  },
-  C: {
-    name: 'Peach to Orange',
-    stops: [
-      { color: hex('FFFFFF') },
-      { color: hex('F39A35') },
-      { color: hex('FC6540') },
-    ],
-  },
-  D: {
-    name: 'Green to Orange',
+    name: 'Foggy Haze',
     stops: [
       { color: hex('4E917D') },
       { color: hex('C4EFC9') },
@@ -82,27 +64,16 @@ export const PALETTES: Record<string, Palette> = {
       { color: hex('0A6350') },
     ],
   },
-  E: {
-    name: 'Dark Blue',
+  C: {
+    name: 'Morning',
     stops: [
-      { color: hex('000000') },
-      { color: hex('0B1836') },
-      { color: hex('1F3362') },
-    ],
-  },
-  F: {
-    name: 'Orange to Red',
-    stops: [
-      { color: hex('FC6540') },
+      { color: hex('FFFFFF') },
       { color: hex('F39A35') },
       { color: hex('FC6540') },
-      { color: hex('FC483B') },
-      { color: hex('FC6540') },
-      { color: hex('F39A35') },
     ],
   },
-  G: {
-    name: 'Grey-Green',
+  D: {
+    name: 'Midday',
     stops: [
       { color: hex('89C0C6') },
       { color: hex('DEDEDE') },
@@ -111,13 +82,42 @@ export const PALETTES: Record<string, Palette> = {
       { color: hex('66A4CE') },
     ],
   },
-  H: {
-    name: 'Red to Dark Red',
+  E: {
+    name: 'Dusk',
+    stops: [
+      { color: hex('9EEFE1') },
+      { color: hex('DBDBDB') },
+      { color: hex('F39A35') },
+      { color: hex('4E917D') },
+      { color: hex('0A6350') },
+    ],
+  },
+  F: {
+    name: 'Sunset',
     stops: [
       { color: hex('E82338') },
       { color: hex('FC483B') },
       { color: hex('FC6540') },
       { color: hex('C29688') },
+    ],
+  },
+  G: {
+    name: 'Afterglow',
+    stops: [
+      { color: hex('FC6540') },
+      { color: hex('F39A35') },
+      { color: hex('FC6540') },
+      { color: hex('FC483B') },
+      { color: hex('FC6540') },
+      { color: hex('F39A35') },
+    ],
+  },
+  H: {
+    name: 'Night',
+    stops: [
+      { color: hex('000000') },
+      { color: hex('0B1836') },
+      { color: hex('1F3362') },
     ],
   },
 };
