@@ -16,6 +16,13 @@ export interface UniformLocations {
   u_positionsB: WebGLUniformLocation | null;
   u_stopCountB: WebGLUniformLocation | null;
   u_blend: WebGLUniformLocation | null;
+  u_cursor: WebGLUniformLocation | null;
+  u_cursorRadius: WebGLUniformLocation | null;
+  u_cursorStrength: WebGLUniformLocation | null;
+  u_cursorNoiseScale: WebGLUniformLocation | null;
+  u_cursorNoiseSpeed: WebGLUniformLocation | null;
+  u_cursorOctaves: WebGLUniformLocation | null;
+  u_cursorLacunarity: WebGLUniformLocation | null;
 }
 
 const UNIFORM_NAMES: (keyof UniformLocations)[] = [
@@ -32,6 +39,13 @@ const UNIFORM_NAMES: (keyof UniformLocations)[] = [
   'u_positionsB',
   'u_stopCountB',
   'u_blend',
+  'u_cursor',
+  'u_cursorRadius',
+  'u_cursorStrength',
+  'u_cursorNoiseScale',
+  'u_cursorNoiseSpeed',
+  'u_cursorOctaves',
+  'u_cursorLacunarity',
 ];
 
 export function getUniformLocations(
@@ -69,6 +83,13 @@ export function setUniforms(
     positionsB: Float32Array;
     stopCountB: number;
     blend: number;
+    cursor: [number, number];
+    cursorRadius: number;
+    cursorStrength: number;
+    cursorNoiseScale: number;
+    cursorNoiseSpeed: number;
+    cursorOctaves: number;
+    cursorLacunarity: number;
   },
 ) {
   gl.uniform1f(locs.u_time, params.time);
@@ -84,4 +105,11 @@ export function setUniforms(
   gl.uniform1fv(locs.u_positionsB, params.positionsB);
   gl.uniform1i(locs.u_stopCountB, params.stopCountB);
   gl.uniform1f(locs.u_blend, params.blend);
+  gl.uniform2f(locs.u_cursor, params.cursor[0], params.cursor[1]);
+  gl.uniform1f(locs.u_cursorRadius, params.cursorRadius);
+  gl.uniform1f(locs.u_cursorStrength, params.cursorStrength);
+  gl.uniform1f(locs.u_cursorNoiseScale, params.cursorNoiseScale);
+  gl.uniform1f(locs.u_cursorNoiseSpeed, params.cursorNoiseSpeed);
+  gl.uniform1i(locs.u_cursorOctaves, params.cursorOctaves);
+  gl.uniform1f(locs.u_cursorLacunarity, params.cursorLacunarity);
 }

@@ -43,6 +43,15 @@ uniform int   u_stopCountB;
 
 uniform float u_blend;
 
+// ---- Cursor distortion uniforms ----
+uniform vec2  u_cursor;          // normalized cursor position in UV space
+uniform float u_cursorRadius;     // falloff radius in UV space
+uniform float u_cursorStrength;   // distortion amount (+push / -pull)
+uniform float u_cursorNoiseScale; // frequency of the warp noise
+uniform float u_cursorNoiseSpeed; // evolution speed of the warp noise
+uniform int   u_cursorOctaves;    // FBM octaves for the warp noise
+uniform float u_cursorLacunarity; // frequency multiplier per octave
+
 // ---- 3D Simplex Noise (Ashima / webgl-noise, public domain) ----
 vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
 vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
@@ -143,6 +152,34 @@ void main() {
   // Aspect-corrected UVs
   vec2 uv = vUV;
   uv.x *= u_aspect;
+
+  // ---- Cursor distortion (applied before noise scaling) ----
+  vec2 cursorAspect = vec2(u_cursor.x * u_aspect, u_cursor.y);
+  vec2 delta = uv - cursorAspect;
+  float dist = length(delta);
+  // Gaussian falloff: exp(-0.5 * (dist/sigma)^2), sigma = radius/3
+  float sigma = u_cursorRadius / 3.0;
+  float falloff = exp(-0.5 * (dist * dist) / (sigma * sigma));
+
+  // FBM noise warp: distort UVs locally around cursor
+  {
+    float amp = 1.0;
+    float freq = u_cursorNoiseScale;
+    float nx = 0.0;
+    float ny = 0.0;
+    float totalAmp = 0.0;
+    for (int o = 0; o < 6; o++) {
+      if (o >= u_cursorOctaves) break;
+      nx += amp * snoise(vec3(uv * freq, u_time * u_cursorNoiseSpeed));
+      ny += amp * snoise(vec3(uv * freq + 100.0, u_time * u_cursorNoiseSpeed));
+      totalAmp += amp;
+      freq *= u_cursorLacunarity;
+      amp *= 0.5;
+    }
+    nx /= totalAmp;
+    ny /= totalAmp;
+    uv += vec2(nx, ny) * u_cursorStrength * falloff;
+  }
 
   // Scale for noise frequency (per-axis)
   uv.x *= u_noiseScaleX;

@@ -18,6 +18,13 @@ export interface ShaderCanvasProps {
   evolveSpeed: number;
   lerpDuration: number;
   lerpEasing: number;
+  cursorRadius: number;
+  cursorStrength: number;
+  cursorNoiseScale: number;
+  cursorNoiseSpeed: number;
+  cursorOctaves: number;
+  cursorLacunarity: number;
+  cursorDrag: number;
 }
 
 export default function ShaderCanvas({
@@ -28,12 +35,24 @@ export default function ShaderCanvas({
   evolveSpeed,
   lerpDuration,
   lerpEasing,
+  cursorRadius,
+  cursorStrength,
+  cursorNoiseScale,
+  cursorNoiseSpeed,
+  cursorOctaves,
+  cursorLacunarity,
+  cursorDrag,
 }: ShaderCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Mutable refs so the rAF loop always reads the latest props without re-init
-  const propsRef = useRef({ noiseScaleX, noiseScaleY, scrollSpeed, evolveSpeed, lerpDuration, lerpEasing });
-  propsRef.current = { noiseScaleX, noiseScaleY, scrollSpeed, evolveSpeed, lerpDuration, lerpEasing };
+  const propsRef = useRef({ noiseScaleX, noiseScaleY, scrollSpeed, evolveSpeed, lerpDuration, lerpEasing, cursorRadius, cursorStrength, cursorNoiseScale, cursorNoiseSpeed, cursorOctaves, cursorLacunarity, cursorDrag });
+  propsRef.current = { noiseScaleX, noiseScaleY, scrollSpeed, evolveSpeed, lerpDuration, lerpEasing, cursorRadius, cursorStrength, cursorNoiseScale, cursorNoiseSpeed, cursorOctaves, cursorLacunarity, cursorDrag };
+
+  // Cursor position in normalized UV space [0,1] — updated by mousemove
+  const cursorRef = useRef<[number, number]>([0.5, 0.5]);
+  // Raw (instant) mouse position, smoothed cursor lerps toward this
+  const cursorTargetRef = useRef<[number, number]>([0.5, 0.5]);
 
   // Lerp state lives outside React state to avoid re-renders each frame
   const lerpRef = useRef<LerpState | null>(null);
@@ -108,6 +127,13 @@ export default function ShaderCanvas({
         positionsB: lerp.to.positions,
         stopCountB: lerp.to.stopCount,
         blend: easedBlend,
+        cursor: cursorRef.current,
+        cursorRadius: props.cursorRadius,
+        cursorStrength: props.cursorStrength,
+        cursorNoiseScale: props.cursorNoiseScale,
+        cursorNoiseSpeed: props.cursorNoiseSpeed,
+        cursorOctaves: props.cursorOctaves,
+        cursorLacunarity: props.cursorLacunarity,
       });
 
       gl!.drawArrays(gl!.TRIANGLES, 0, 3);
@@ -132,6 +158,15 @@ export default function ShaderCanvas({
     resizeObserver.observe(canvas);
     resize();
 
+    // ---- Mouse tracking ----
+    function onMouseMove(e: MouseEvent) {
+      const rect = canvas!.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width;
+      const y = 1.0 - (e.clientY - rect.top) / rect.height; // flip Y to match UV
+      cursorTargetRef.current = [x, y];
+    }
+    canvas.addEventListener('mousemove', onMouseMove);
+
     // ---- Render loop ----
     function frame(nowMs: number) {
       rafId = requestAnimationFrame(frame);
@@ -144,6 +179,16 @@ export default function ShaderCanvas({
       // Advance palette lerp
       updateLerp(lerpRef.current!, dt, propsRef.current.lerpDuration);
 
+      // Smooth cursor toward target (drag)
+      const drag = propsRef.current.cursorDrag;
+      const smoothing = 1.0 - Math.pow(drag, dt * 60.0); // frame-rate independent
+      const [tx, ty] = cursorTargetRef.current;
+      const [cx, cy] = cursorRef.current;
+      cursorRef.current = [
+        cx + (tx - cx) * smoothing,
+        cy + (ty - cy) * smoothing,
+      ];
+
       render();
     }
 
@@ -153,6 +198,7 @@ export default function ShaderCanvas({
     return () => {
       cancelAnimationFrame(rafId);
       resizeObserver.disconnect();
+      canvas.removeEventListener('mousemove', onMouseMove);
       gl.deleteProgram(program);
       gl.deleteVertexArray(vao);
     };
